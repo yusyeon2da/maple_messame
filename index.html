@@ -24,6 +24,80 @@ const ids=["home","formScreen","complete","myLetter"];function show(id){ids.forE
 const message=document.getElementById("message"),dorm=document.getElementById("dorm"),insta=document.getElementById("insta"),privacy=document.getElementById("privacy"),publish=document.getElementById("publish");
 message.addEventListener("input",()=>document.getElementById("count").textContent=message.value.length+" / 300");
 document.getElementById("startBtn").onclick=()=>show("formScreen");document.getElementById("backBtn").onclick=()=>show("home");
-document.getElementById("hangBtn").onclick=()=>{let ok=true;[["messageField",message.value.trim()],["dormField",dorm.value.trim()],["instaField",insta.value.trim()],["privacyField",privacy.checked],["publishField",publish.checked]].forEach(([id,val])=>{let pass=typeof val==="boolean"?val:val.length>0;if(id==="privacyField"||id==="publishField")document.getElementById(id).style.outline=pass?"none":"2px solid #c92f1d";else document.getElementById(id).classList.toggle("invalid",!pass);if(!pass)ok=false});document.getElementById("formError").style.display=ok?"none":"block";if(!ok){document.getElementById("formError").scrollIntoView({behavior:"smooth",block:"center"});return}const own={message:message.value.trim(),dorm:dorm.value.trim(),insta:insta.value.trim().replace(/^@/,"")};try{sessionStorage.setItem("myMapleLetter",JSON.stringify(own))}catch(e){}show("complete")};
-document.getElementById("doneHome").onclick=()=>show("home");document.getElementById("doneView").onclick=()=>show("myLetter");document.getElementById("myHome").onclick=()=>show("home");document.getElementById("editLetter").onclick=()=>show("formScreen");document.getElementById("privacyDetails").onclick=()=>document.getElementById("privacyModal").style.display="flex";document.getElementById("closePrivacy").onclick=()=>document.getElementById("privacyModal").style.display="none";
+document.getElementById("hangBtn").onclick = async () => {
+  let ok = true;
+
+  [
+    ["messageField", message.value.trim()],
+    ["dormField", dorm.value.trim()],
+    ["instaField", insta.value.trim()],
+    ["privacyField", privacy.checked],
+    ["publishField", publish.checked]
+  ].forEach(([id, val]) => {
+    const pass = typeof val === "boolean" ? val : val.length > 0;
+
+    if (id === "privacyField" || id === "publishField") {
+      document.getElementById(id).style.outline =
+        pass ? "none" : "2px solid #c92f1d";
+    } else {
+      document.getElementById(id).classList.toggle("invalid", !pass);
+    }
+
+    if (!pass) ok = false;
+  });
+
+  const error = document.getElementById("formError");
+
+  if (!ok) {
+    error.textContent = "모든 항목을 입력하고 필수 동의를 확인해 주세요.";
+    error.style.display = "block";
+    error.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
+  const btn = document.getElementById("hangBtn");
+  if (btn.disabled) return;
+
+  btn.disabled = true;
+
+  const payload = {
+    message: message.value.trim(),
+    dorm_name: dorm.value.trim(),
+    instagram_id: insta.value.trim().replace(/^@/, ""),
+    privacy_consent: privacy.checked,
+    publish_consent: publish.checked
+  };
+
+  try {
+    const response = await fetch(
+      "https://arvhxlssovzqdiowyzpp.supabase.co/rest/v1/maple_letters",
+      {
+        method: "POST",
+        headers: {
+          "apikey": "sb_publishable_SoUikyCdfpcSLxbdJmYlEg_g45A4XM3",
+          "Authorization": "Bearer sb_publishable_SoUikyCdfpcSLxbdJmYlEg_g45A4XM3",
+          "Content-Type": "application/json",
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (!response.ok) {
+      console.error("Supabase error:", response.status, await response.text());
+      throw new Error("저장 실패");
+    }
+
+    show("complete");
+  } catch (e) {
+    error.textContent =
+      "편지를 저장하지 못했어요. 잠시 후 다시 시도해 주세요.";
+    error.style.display = "block";
+    error.scrollIntoView({ behavior: "smooth", block: "center" });
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+  document.getElementById("doneHome").onclick=()=>show("home");document.getElementById("doneView").onclick=()=>show("myLetter");document.getElementById("myHome").onclick=()=>show("home");document.getElementById("editLetter").onclick=()=>show("formScreen");document.getElementById("privacyDetails").onclick=()=>document.getElementById("privacyModal").style.display="flex";document.getElementById("closePrivacy").onclick=()=>document.getElementById("privacyModal").style.display="none";
 </script></body></html>
